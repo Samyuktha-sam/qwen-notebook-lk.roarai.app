@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notebook</title>
+<style>
+  :root {
+    --bg:#f5f1ea; --panel:#fffdf8; --ink:#1f1c18; --muted:#7b7469; --line:#e6dfd2;
+    --accent:#a8431f; --accent-ink:#fff; --chip:#efe6d6; --ok:#2f7d4f; --warn:#b4741f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#151412; --panel:#1d1b18; --ink:#ece6dc; --muted:#9b9488; --line:#2d2a25; --accent:#e17a4a; --accent-ink:#1a0f08; --chip:#2a2621; --ok:#6fcf97; --warn:#e0b04a; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.55 ui-serif, Georgia, "Iowan Old Style", serif; }
+  .sans, button, input, textarea, .chip, .tab, .meta { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { max-width:880px; margin:0 auto; padding:26px 20px 8px; display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+  h1 { margin:0; font-size:24px; letter-spacing:.2px; }
+  .sub { color:var(--muted); font-size:13px; }
+  nav { max-width:880px; margin:0 auto; padding:8px 20px 0; display:flex; gap:6px; border-bottom:1px solid var(--line); }
+  .tab { background:none; border:0; padding:9px 14px; cursor:pointer; color:var(--muted); font-size:14px; border-bottom:2px solid transparent; margin-bottom:-1px; }
+  .tab.on { color:var(--ink); border-color:var(--accent); font-weight:600; }
+  main { max-width:880px; margin:0 auto; padding:18px 20px 60px; }
+  section { display:none; } section.on { display:block; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:14px; }
+  input, textarea { width:100%; background:var(--bg); color:var(--ink); border:1px solid var(--line); border-radius:8px; padding:9px 11px; font-size:14px; }
+  textarea { resize:vertical; min-height:96px; }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .btn { background:var(--accent); color:var(--accent-ink); border:0; border-radius:8px; padding:9px 14px; font-weight:600; font-size:13px; cursor:pointer; }
+  .btn.ghost { background:none; color:var(--ink); border:1px solid var(--line); font-weight:500; }
+  .btn:disabled { opacity:.5; cursor:default; }
+  .link { background:none; border:0; color:var(--muted); cursor:pointer; font-size:12px; padding:2px 4px; }
+  .link:hover { color:var(--ink); text-decoration:underline; }
+  .chip { display:inline-block; background:var(--chip); border-radius:99px; padding:2px 10px; font-size:12px; margin:2px 4px 2px 0; cursor:pointer; border:0; color:var(--ink); }
+  .chip.on { background:var(--accent); color:var(--accent-ink); }
+  .note h3 { margin:0 0 4px; font-size:17px; }
+  .note .sum { color:var(--muted); margin:2px 0 8px; }
+  .note .body { white-space:pre-wrap; word-wrap:break-word; margin:8px 0; }
+  .meta { font-size:12px; color:var(--muted); }
+  .note.flash { outline:2px solid var(--accent); }
+  .pin { color:var(--accent); }
+  .badge-warn { color:var(--warn); font-size:12px; }
+  .err { color:var(--accent); font-size:13px; margin-top:8px; }
+  .banner { background:var(--chip); border:1px solid var(--accent); border-radius:10px; padding:12px 14px; margin-bottom:14px; font-size:14px; }
+  .answer { white-space:pre-wrap; word-wrap:break-word; }
+  .cite { background:var(--chip); border:0; border-radius:6px; padding:0 6px; cursor:pointer; color:var(--accent); font:600 12px ui-sans-serif, system-ui, sans-serif; }
+  .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(130px,1fr)); gap:10px; margin-bottom:14px; }
+  .tile { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px; }
+  .tile b { display:block; font-size:26px; font-weight:600; }
+  table { width:100%; border-collapse:collapse; font:13px ui-sans-serif, system-ui, sans-serif; }
+  th, td { text-align:left; padding:7px 6px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:500; }
+  .empty { color:var(--muted); text-align:center; padding:28px 0; }
+</style>
+</head>
+<body>
+<header>
+  <div><h1>Notebook</h1><div class="sub sans">Notes that organise themselves · powered by Qwen 3.8</div></div>
+</header>
+<nav>
+  <button class="tab on" data-tab="notes">Notes</button>
+  <button class="tab" data-tab="ask">Ask your notes</button>
+  <button class="tab" data-tab="insights">Insights</button>
+</nav>
+<main>
+  <div id="banner" class="banner sans" hidden></div>
+
+  <section id="notes" class="on">
+    <div class="card">
+      <input id="title" placeholder="Title (optional — Qwen will write one)" maxlength="200">
+      <textarea id="body" placeholder="Write or paste anything: meeting notes, ideas, recipes, links…" style="margin-top:8px"></textarea>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="save">Save note</button>
+        <button class="btn ghost" id="cancel" hidden>Cancel edit</button>
+        <span class="meta" id="saveMsg"></span>
+      </div>
+      <div class="err" id="saveErr"></div>
+    </div>
+    <div class="row" style="margin-bottom:10px">
+      <input id="search" placeholder="Search notes…" style="flex:1; min-width:180px">
+    </div>
+    <div id="tags" style="margin-bottom:10px"></div>
+    <div id="list"></div>
+  </section>
+
+  <section id="ask">
+    <div class="card">
+      <textarea id="question" style="min-height:70px" placeholder="Ask a question about what you've written… e.g. “What did I decide about the launch date?”"></textarea>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="askBtn">Ask</button>
+        <span class="meta" id="askMsg"></span>
+      </div>
+      <div class="err" id="askErr"></div>
+    </div>
+    <div id="qa"></div>
+  </section>
+
+  <section id="insights">
+    <div class="tiles" id="tiles"></div>
+    <div class="card"><b class="sans">AI usage (stored in your database)</b><div id="usage" style="margin-top:8px"></div></div>
+    <div class="card"><b class="sans">Status</b><div id="status" class="meta" style="margin-top:6px; line-height:1.8"></div></div>
+    <a class="btn ghost sans" style="display:inline-block;text-decoration:none" href="/api/export">Download everything (JSON)</a>
+  </section>
+</main>
+
+<script>
+const $ = (s) => document.querySelector(s);
+let editingId = null, activeTag = "", busy = false;
+
+async function api(url, method = "GET", body) {
+  const r = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw Object.assign(new Error(j.error || r.statusText), { data: j });
+  return j;
+}
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const fmt = (d) => new Date(d).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+
+// ---- tabs ----
+function showTab(name) {
+  document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("on", t.dataset.tab === name));
+  document.querySelectorAll("section").forEach((s) => s.classList.toggle("on", s.id === name));
+  if (name === "ask") loadQA();
+  if (name === "insights") loadInsights();
+}
+document.querySelectorAll(".tab").forEach((t) => (t.onclick = () => showTab(t.dataset.tab)));
+
+// ---- notes ----
+async function loadTags() {
+  const tags = await api("/api/tags");
+  const box = $("#tags"); box.innerHTML = "";
+  tags.forEach(({ tag, count }) => {
+    const c = el("button", "chip" + (tag === activeTag ? " on" : ""), `${tag} · ${count}`);
+    c.onclick = () => { activeTag = activeTag === tag ? "" : tag; loadNotes(); loadTags(); };
+    box.appendChild(c);
+  });
+}
+
+async function loadNotes() {
+  const list = $("#list");
+  try {
+    const rows = await api(`/api/notes?q=${encodeURIComponent($("#search").value)}&tag=${encodeURIComponent(activeTag)}`);
+    list.innerHTML = "";
+    if (!rows.length) { list.appendChild(el("div", "empty sans", $("#search").value || activeTag ? "No notes match." : "No notes yet — write your first one above.")); return; }
+    rows.forEach((n) => list.appendChild(renderNote(n)));
+  } catch (e) { list.innerHTML = ""; }
+}
+
+function renderNote(n) {
+  const card = el("div", "card note"); card.id = "note-" + n.id;
+  const h = el("h3"); if (n.pinned) h.appendChild(el("span", "pin", "★ ")); h.appendChild(document.createTextNode(n.title || "Untitled"));
+  card.appendChild(h);
+  if (n.summary) card.appendChild(el("div", "sum", n.summary));
+  const body = el("div", "body", n.body); body.hidden = true;
+  card.appendChild(body);
+  const tags = el("div"); n.tags.forEach((t) => { const c = el("button", "chip", t); c.onclick = () => { activeTag = t; loadNotes(); loadTags(); }; tags.appendChild(c); });
+  card.appendChild(tags);
+  const meta = el("div", "meta row", fmt(n.updated_at));
+  if (n.ai_status === "failed") meta.appendChild(el("span", "badge-warn", "· AI organising failed"));
+  const act = (label, fn) => { const b = el("button", "link", label); b.onclick = fn; meta.appendChild(b); return b; };
+  const toggle = act("Show full note", () => { body.hidden = !body.hidden; toggle.textContent = body.hidden ? "Show full note" : "Hide"; });
+  act(n.pinned ? "Unpin" : "Pin", async () => { await api(`/api/notes/${n.id}/pin`, "POST", { pinned: !n.pinned }); loadNotes(); });
+  act("Edit", () => startEdit(n));
+  act("Re-organise with AI", async (e) => { e.target.textContent = "Working…"; try { await api(`/api/notes/${n.id}/enrich`, "POST"); } catch (_) {} loadNotes(); loadTags(); });
+  act("Delete", async () => { if (confirm("Delete this note?")) { await api(`/api/notes/${n.id}`, "DELETE"); loadNotes(); loadTags(); } });
+  card.appendChild(meta);
+  return card;
+}
+
+function startEdit(n) {
+  editingId = n.id; $("#title").value = n.title; $("#body").value = n.body;
+  $("#save").textContent = "Update note"; $("#cancel").hidden = false;
+  window.scrollTo({ top: 0, behavior: "smooth" }); $("#body").focus();
+}
+function resetComposer() { editingId = null; $("#title").value = ""; $("#body").value = ""; $("#save").textContent = "Save note"; $("#cancel").hidden = true; }
+$("#cancel").onclick = resetComposer;
+
+$("#save").onclick = async () => {
+  const body = $("#body").value.trim(); if (!body || busy) return;
+  busy = true; $("#save").disabled = true; $("#saveErr").textContent = ""; $("#saveMsg").textContent = "Saving and organising with Qwen…";
+  try {
+    const payload = { title: $("#title").value, body };
+    editingId ? await api(`/api/notes/${editingId}`, "PUT", payload) : await api("/api/notes", "POST", payload);
+    resetComposer(); await loadNotes(); await loadTags();
+  } catch (e) { $("#saveErr").textContent = e.message; }
+  busy = false; $("#save").disabled = false; $("#saveMsg").textContent = "";
+};
+
+let st; $("#search").oninput = () => { clearTimeout(st); st = setTimeout(loadNotes, 250); };
+
+function focusNote(id) {
+  showTab("notes"); activeTag = ""; $("#search").value = "";
+  loadNotes().then(() => {
+    const n = document.getElementById("note-" + id);
+    if (n) { n.scrollIntoView({ behavior: "smooth", block: "center" }); n.classList.add("flash"); setTimeout(() => n.classList.remove("flash"), 2000); }
+  });
+}
+
+// ---- ask ----
+function renderAnswerText(text) {
+  const box = el("div", "answer");
+  text.split(/(\[#\d+\])/g).forEach((part) => {
+    const m = part.match(/^\[#(\d+)\]$/);
+    if (m) { const b = el("button", "cite", "#" + m[1]); b.onclick = () => focusNote(+m[1]); box.appendChild(b); }
+    else box.appendChild(document.createTextNode(part));
+  });
+  return box;
+}
+
+function renderQA(r) {
+  const card = el("div", "card");
+  card.appendChild(el("b", "sans", r.question));
+  const a = renderAnswerText(r.answer); a.style.marginTop = "8px"; card.appendChild(a);
+  const meta = el("div", "meta"); meta.style.marginTop = "8px";
+  meta.appendChild(document.createTextNode(fmt(r.created_at) + (r.sources.length ? " · from: " : "")));
+  r.sources.forEach((s) => { const b = el("button", "chip", s.title); b.onclick = () => focusNote(s.id); meta.appendChild(b); });
+  const del = el("button", "link", "Delete"); del.onclick = async () => { await api(`/api/qa/${r.id}`, "DELETE"); loadQA(); };
+  meta.appendChild(del); card.appendChild(meta);
+  return card;
+}
+
+async function loadQA() {
+  try {
+    const rows = await api("/api/qa"); const box = $("#qa"); box.innerHTML = "";
+    if (!rows.length) box.appendChild(el("div", "empty sans", "Your questions and answers are saved here."));
+    rows.forEach((r) => box.appendChild(renderQA(r)));
+  } catch (e) {}
+}
+
+$("#askBtn").onclick = async () => {
+  const question = $("#question").value.trim(); if (!question || busy) return;
+  busy = true; $("#askBtn").disabled = true; $("#askErr").textContent = ""; $("#askMsg").textContent = "Reading your notes…";
+  try { await api("/api/ask", "POST", { question }); $("#question").value = ""; await loadQA(); }
+  catch (e) { $("#askErr").textContent = e.message + (e.data?.requestId ? ` (request ${e.data.requestId})` : ""); }
+  busy = false; $("#askBtn").disabled = false; $("#askMsg").textContent = "";
+};
+$("#question").onkeydown = (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) $("#askBtn").click(); };
+
+// ---- insights ----
+async function loadInsights() {
+  try {
+    const [s, tags, status] = await Promise.all([api("/api/stats"), api("/api/tags"), api("/api/status")]);
+    const tiles = $("#tiles"); tiles.innerHTML = "";
+    [["Notes", s.notes], ["Pinned", s.pinned], ["Questions asked", s.questions], ["Tags in use", tags.length]].forEach(([k, v]) => {
+      const t = el("div", "tile sans"); t.appendChild(el("b", "", String(v))); t.appendChild(el("span", "meta", k)); tiles.appendChild(t);
+    });
+    const u = $("#usage"); u.innerHTML = "";
+    if (!s.usage.length) u.appendChild(el("div", "meta", "No AI calls yet."));
+    else {
+      const t = el("table"); t.innerHTML = "<tr><th>Kind</th><th>Calls</th><th>Prompt tokens</th><th>Completion tokens</th></tr>";
+      s.usage.forEach((x) => { const tr = el("tr"); [x.kind === "enrich" ? "Organising notes" : "Asking notes", x.calls, x.prompt_tokens, x.completion_tokens].forEach((v) => tr.appendChild(el("td", "", String(v)))); t.appendChild(tr); });
+      u.appendChild(t);
+    }
+    $("#status").innerHTML = "";
+    [["Model", status.model], ["Gateway", status.gateway], ["Database", status.database], ["API key", status.hasApiKey ? "present" : "MISSING"]].forEach(([k, v]) => {
+      const d = el("div"); d.appendChild(el("b", "", k + ": ")); d.appendChild(document.createTextNode(v)); $("#status").appendChild(d);
+    });
+  } catch (e) {}
+}
+
+// ---- boot ----
+(async () => {
+  try {
+    const s = await api("/api/status");
+    const problems = [];
+    if (s.database !== "connected") problems.push(s.databaseError || "Database is not connected.");
+    if (!s.hasApiKey) problems.push("ROAR_API_KEY is missing, so AI features will not work.");
+    if (problems.length) { const b = $("#banner"); b.hidden = false; b.textContent = problems.join(" "); }
+  } catch (e) {}
+  loadNotes(); loadTags();
+})();
+</script>
+</body>
+</html>
