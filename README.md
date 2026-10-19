@@ -6,18 +6,6 @@ database. You can search and filter by tag, pin notes, and **ask questions that 
 only from your own notes** (with clickable citations). An Insights tab shows counts and AI
 token usage straight from the database, and you can export everything as JSON.
 
-## Deploy on Roar AI
-
-1. Put these files at the top level of a GitHub repo (`package.json`, `server.js`, `public/`).
-2. Roar console → **Apps → New application** → connect GitHub and pick the repo.
-3. Choose your region and turn the **database** on (it is created in the same region as the app).
-4. On the app's **Environment** tab add `APP_PASSWORD` (any password you choose) and, if you
-   need a different model, `QWEN_MODEL`.
-5. Launch. Roar injects `ROAR_API_KEY`, `ROAR_BASE_URL` and `DATABASE_URL`.
-
-Tables (`notes`, `qa`, `ai_calls`) are created automatically on first start. Leave Roar's
-"migrations" setting on its default — the app creates its own tables.
-
 ## Environment variables
 
 | Variable | Default | Purpose |
