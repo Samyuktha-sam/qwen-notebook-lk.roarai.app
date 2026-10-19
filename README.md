@@ -6,16 +6,6 @@ database. You can search and filter by tag, pin notes, and **ask questions that 
 only from your own notes** (with clickable citations). An Insights tab shows counts and AI
 token usage straight from the database, and you can export everything as JSON.
 
-## Environment variables
-
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `QWEN_MODEL` | `qwen3.8-27b-lk` | Model id. `-lk` is the in-country variant. |
-| `APP_PASSWORD` | none | If set, the app asks for it (any username). **Set this**, otherwise anyone with the URL can use your AI credit and read your notes. |
-| `REASONING_EFFORT` | not sent | Optional `low` / `medium` / `high` for models that support it. |
-
-Do not set `ROAR_API_KEY`, `ROAR_BASE_URL` or `DATABASE_URL`; Roar provides them.
-
 ## API
 
 | Method | Path | What it does |
